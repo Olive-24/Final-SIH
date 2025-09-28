@@ -1,8 +1,10 @@
 import { TrendingUp, Thermometer, Droplets, Activity, Globe } from "lucide-react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
+import { Input } from "@/components/ui/input";
 
 const Dashboard = () => {
   const stats = [
@@ -54,6 +56,19 @@ const Dashboard = () => {
     };
   });
 
+  // Alert configuration (mean + thresholds in °C)
+  const [meanTemp, setMeanTemp] = useState<number>(28.0 as unknown as number);
+  const [yellowThresh, setYellowThresh] = useState<number>(0.5 as unknown as number);
+  const [orangeThresh, setOrangeThresh] = useState<number>(1.0 as unknown as number);
+  const [redThresh, setRedThresh] = useState<number>(1.5 as unknown as number);
+
+  const latestSst = tempTrends[tempTrends.length - 1]?.sst ?? 0;
+  const sstDelta = latestSst - meanTemp;
+  const sstDeltaAbs = Math.abs(sstDelta);
+  const alertLevel = sstDeltaAbs >= redThresh ? 'red' : sstDeltaAbs >= orangeThresh ? 'orange' : sstDeltaAbs >= yellowThresh ? 'yellow' : 'green';
+  const alertText = alertLevel === 'red' ? 'RED alert: SST far from mean' : alertLevel === 'orange' ? 'ORANGE alert: SST moderately far from mean' : alertLevel === 'yellow' ? 'YELLOW alert: SST slightly away from mean' : 'Normal: SST near mean';
+  const alertColor = alertLevel === 'red' ? 'text-red-600' : alertLevel === 'orange' ? 'text-orange-500' : alertLevel === 'yellow' ? 'text-yellow-500' : 'text-green-600';
+
   const salinityByDepth = [
     { depth: 0, psu: 35.4 },
     { depth: 50, psu: 35.2 },
@@ -82,6 +97,39 @@ const Dashboard = () => {
           <Button variant="ocean">Generate Insights</Button>
         </div>
       </div>
+
+      {/* Alerts and Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Temperature Alert</span>
+            <span className={`text-sm font-semibold ${alertColor}`}>{alertText}</span>
+          </CardTitle>
+          <CardDescription>
+            Latest SST: {latestSst.toFixed(2)}°C · Delta vs mean: {sstDelta >= 0 ? '+' : ''}{sstDelta.toFixed(2)}°C
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mean SST (°C)</label>
+              <Input type="number" step="0.1" value={meanTemp} onChange={(e) => setMeanTemp(parseFloat(e.target.value))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Yellow threshold (±°C)</label>
+              <Input type="number" step="0.1" value={yellowThresh} onChange={(e) => setYellowThresh(parseFloat(e.target.value))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Orange threshold (±°C)</label>
+              <Input type="number" step="0.1" value={orangeThresh} onChange={(e) => setOrangeThresh(parseFloat(e.target.value))} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Red threshold (±°C)</label>
+              <Input type="number" step="0.1" value={redThresh} onChange={(e) => setRedThresh(parseFloat(e.target.value))} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
