@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Filter, Download, Play, Pause, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,8 @@ const MapView = () => {
   const mapRef = useRef(null as unknown as L.Map);
   const [selectedFloatId, setSelectedFloatId] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [animationIndex, setAnimationIndex] = useState(0);
+  const animationTimerRef = useRef<number | null>(null);
   
   const mockFloats = [
     // Indian Ocean region expanded mock points (IDs are illustrative)
@@ -67,7 +69,7 @@ const MapView = () => {
   function handleSearch() {
     const txt = searchText.trim();
     // Accept formats like: "12.1,72.4" or "12.1, 72.4" or "12.1 72.4"
-    const match = txt.match(/(-?\d+\.?\d*)\s*(?:,|\s)\s*(-?-?\d+\.?\d*)/);
+    const match = txt.match(/(-?\d+\.?\d*)\s*(?:,|\s)\s*(-?\d+\.?\d*)/);
     if (match) {
       const lat = parseFloat(match[1]);
       const lon = parseFloat(match[2]);
@@ -101,6 +103,35 @@ const MapView = () => {
     setSelectedFloatId(floatId);
     setIsProfileOpen(true);
   }
+
+  // Animation: pan through floats automatically while playing
+  useEffect(() => {
+    if (!isPlaying) {
+      if (animationTimerRef.current) {
+        window.clearInterval(animationTimerRef.current);
+        animationTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (!mapRef.current || mockFloats.length === 0) return;
+
+    animationTimerRef.current = window.setInterval(() => {
+      setAnimationIndex((prev) => {
+        const next = (prev + 1) % mockFloats.length;
+        const f = mockFloats[next];
+        mapRef.current!.flyTo([f.lat, f.lon], 5, { duration: 1.0 });
+        return next;
+      });
+    }, 1500);
+
+    return () => {
+      if (animationTimerRef.current) {
+        window.clearInterval(animationTimerRef.current);
+        animationTimerRef.current = null;
+      }
+    };
+  }, [isPlaying, mockFloats, mapRef]);
 
   function generateMockProfile(): { depth: number; value: number }[] {
     // Simple decreasing temperature with depth
@@ -211,7 +242,18 @@ const MapView = () => {
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                   {isPlaying ? 'Pause' : 'Play'}
                 </Button>
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setIsPlaying(false);
+                    setAnimationIndex(0);
+                    const f = mockFloats[0];
+                    if (f && mapRef.current) {
+                      mapRef.current.flyTo([f.lat, f.lon], 4, { duration: 0.8 });
+                    }
+                  }}
+                >
                   <RotateCcw className="w-4 h-4" />
                 </Button>
               </div>
@@ -271,6 +313,7 @@ const MapView = () => {
           center={[10, 75]}
           zoom={4}
           style={{ height: "100%", width: "100%" }}
+          className="z-0"
           worldCopyJump
           whenCreated={(map) => { mapRef.current = map; }}
         >
@@ -306,7 +349,7 @@ const MapView = () => {
         </MapContainer>
 
         <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg z-[10000]">
             <DialogHeader>
               <DialogTitle>Float {selectedFloatId} — {selectedParameter === "temperature" ? "Temperature" : selectedParameter} profile</DialogTitle>
             </DialogHeader>

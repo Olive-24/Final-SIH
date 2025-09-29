@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Chat from "./pages/Chat";
 import MapView from "./pages/MapView";
 import Dashboard from "./pages/Dashboard";
+import Disaster from "./pages/Disaster";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/map" element={<MapView />} />
+            <Route path="/disaster" element={<Disaster />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/about" element={<About />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
