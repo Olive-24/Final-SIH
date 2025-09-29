@@ -7,7 +7,8 @@ import {
   Info, 
   Waves,
   Thermometer,
-  Activity
+  Activity,
+  AlertTriangle
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -27,6 +28,7 @@ const navigationItems = [
   { title: "Home", url: "/", icon: Home },
   { title: "Chat", url: "/chat", icon: MessageCircle },
   { title: "Map View", url: "/map", icon: Map },
+  { title: "Disaster Prediction", url: "/disaster", icon: AlertTriangle },
   { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
   { title: "About", url: "/about", icon: Info },
 ];
